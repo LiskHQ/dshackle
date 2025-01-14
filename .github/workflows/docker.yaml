@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - LISK-1400-Setup-Dshackle
 
 jobs:
   docker:
