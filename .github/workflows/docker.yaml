@@ -5,6 +5,8 @@ on:
     branches:
       - master
       - LISK-1400-Setup-Dshackle
+env:
+  ECS_TASK_DEFINITION: task-definition.json
 
 jobs:
   docker:
@@ -34,13 +36,16 @@ jobs:
         id: docker-image
         run: |
           echo "image=${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}" >> $GITHUB_OUTPUT
+      
+      - name: Build docker image
+        run: make jib-docker
 
       - name: Build and push the image
         uses: docker/build-push-action@v6
         id: docker-build
         with:
-          context: ./
-          file: ./Dockerfile
+          context: .
           push: true
           tags: |
             ${{ steps.docker-image.outputs.image }}:latest
+            ${{ steps.docker-image.outputs.image }}:${{ github.sha }}
