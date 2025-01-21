@@ -3,8 +3,8 @@ name: Build docker image
 on:
   push:
     branches:
-      - master
-      - LISK-1400-Setup-Dshackle
+      - test-ci-cd
+
 env:
   ECS_TASK_DEFINITION: task-definition.json
 
@@ -20,6 +20,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          submodules: recursive
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: 21
+
+      - name: Setup gradle
+        uses: gradle/gradle-build-action@v2
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@0e613a0980cbf65ed5b322eb7a1e075d28913a83
@@ -36,16 +48,15 @@ jobs:
         id: docker-image
         run: |
           echo "image=${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}" >> $GITHUB_OUTPUT
-      
+
       - name: Build docker image
         run: make jib-docker
 
-      - name: Build and push the image
-        uses: docker/build-push-action@v6
-        id: docker-build
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ steps.docker-image.outputs.image }}:latest
-            ${{ steps.docker-image.outputs.image }}:${{ github.sha }}
+      - name: Update tags
+        run: |
+          docker tag liskhq/dshackle ${{ steps.docker-image.outputs.image }}:latest
+          docker tag liskhq/dshackle ${{ steps.docker-image.outputs.image }}:${{ github.sha }}
+
+      - name: Push Docker images to Amazon ECR
+        run: |
+          docker push --all-tags ${{ steps.docker-image.outputs.image }}

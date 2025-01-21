@@ -160,7 +160,7 @@ application {
 
 jib {
     from {
-        image = 'docker://drpc-dshackle'
+        image = 'docker://liskhq-dshackle'
     }
     to {
         // by default publish as:
@@ -301,14 +301,17 @@ jacoco {
 }
 
 static def getVersion() {
-    def exactVersion = 'git describe --tags --exact-match'.execute().text.trim()
+    def exactVersion = 'git describe --tags'.execute().text.trim()
+
     def result = ""
     if (exactVersion) {
         result = exactVersion
     } else {
         def tag = 'git describe --tags --abbrev=0'.execute().text.trim()
         if (!tag) {
-            throw new GradleException("No tags found")
+            def commitHash = 'git rev-parse --short HEAD'.execute().text.trim()
+            return commitHash
+            // throw new GradleException("No tags found")
         }
         def m = tag =~ /\.(\d+)$/
         def match = m[0][1]
