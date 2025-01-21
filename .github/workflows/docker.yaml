@@ -3,7 +3,8 @@ name: Build docker image
 on:
   push:
     branches:
-      - test-ci-cd
+      - master
+      - LISK-1400-Setup-Dshackle
 
 env:
   ECS_TASK_DEFINITION: task-definition.json
