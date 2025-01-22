@@ -1,18 +1,17 @@
-name: Build docker image
+name: Deployment
 
 on:
   push:
     branches:
       - master
       - LISK-1400-Setup-Dshackle
-      - test-ci-cd
 
 env:
   ECS_TASK_DEFINITION: task-definition.json
 
 jobs:
   docker:
-    name: Build and push docker image
+    name: Deploy
     permissions:
       id-token: write
       contents: read
@@ -62,3 +61,23 @@ jobs:
       - name: Push Docker images to Amazon ECR
         run: |
           docker push --all-tags ${{ steps.docker-image.outputs.image }}
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition --task-definition ${{ secrets.ECS_TASK }} --query taskDefinition > ${{ env.ECS_TASK_DEFINITION }}
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@c804dfbdd57f713b6c079302a4c01db7017a36fc
+        with:
+          task-definition: ${{ env.ECS_TASK_DEFINITION }}
+          container-name: ${{ github.event.repository.name }}
+          image: ${{ steps.docker-image.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@df9643053eda01f169e64a0e60233aacca83799a
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ secrets.ECS_SERVICE }}
+          cluster: ${{ secrets.ECS_CLUSTER }}
+          wait-for-service-stability: true
