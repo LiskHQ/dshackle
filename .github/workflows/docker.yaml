@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - LISK-1400-Setup-Dshackle
+      - test-ci-cd
 
 env:
   ECS_TASK_DEFINITION: task-definition.json

@@ -301,7 +301,7 @@ jacoco {
 }
 
 static def getVersion() {
-    def exactVersion = 'git describe --tags'.execute().text.trim()
+    def exactVersion = 'git describe --tags --exact-match'.execute().text.trim()
 
     def result = ""
     if (exactVersion) {
