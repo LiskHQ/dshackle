@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - LISK-1400-Setup-Dshackle
 
 env:
   ECS_TASK_DEFINITION: task-definition.json
