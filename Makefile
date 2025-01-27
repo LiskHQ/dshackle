@@ -10,13 +10,13 @@ test: build-foundation
 	./gradlew check
 
 local-docker: Dockerfile
-	docker build -t drpc-dshackle .
+	docker build -t liskhq-dshackle .
 
 jib: build-foundation local-docker
-	./gradlew jib -Pdocker=drpcorg
+	./gradlew jib -Pdocker=liskhq
 
 jib-docker: build-foundation local-docker
-	./gradlew jibDockerBuild -Pdocker=drpcorg
+	./gradlew jibDockerBuild -Pdocker=liskhq
 
 distZip: build-foundation
 	./gradlew disZip

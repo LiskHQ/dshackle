@@ -1,0 +1,24 @@
+name: Sync Fork
+
+on:
+  schedule:
+    - cron: "0 0 * * 1" # once a week on Monday
+  workflow_dispatch: # on button click
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    timeout-minutes: 30 # `yarn test` takes longer time
+    steps:
+      - uses: tgymnich/fork-sync@v2.0.10
+        with:
+          owner: LiskHQ
+          repo: dshackle
+          head: master
+          base: master
+          auto_merge: false
+          pr_title: Sync with upstream repo [$(date +'%Y-%m-%d')]
+          pr_message: Merge latest changes from upstream repo [$(date +'%Y-%m-%d')]

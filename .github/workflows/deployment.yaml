@@ -1,0 +1,85 @@
+name: Deployment
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  ECS_TASK_DEFINITION: task-definition.json
+
+jobs:
+  docker:
+    name: Deploy
+    permissions:
+      id-token: write
+      contents: read
+    runs-on: ubuntu-latest
+    environment: ${{ github.ref_name }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+          submodules: recursive
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: 21
+
+      - name: Setup gradle
+        uses: gradle/gradle-build-action@v2
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-3
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Docker image
+        id: docker-image
+        run: |
+          echo "image=${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}" >> $GITHUB_OUTPUT
+
+      - name: Build docker image
+        run: make jib-docker
+
+      - name: Update tags
+        run: |
+          docker tag liskhq/dshackle ${{ steps.docker-image.outputs.image }}:latest
+          docker tag liskhq/dshackle ${{ steps.docker-image.outputs.image }}:${{ github.sha }}
+
+      - name: Push Docker images to Amazon ECR
+        run: |
+          docker push ${{ steps.docker-image.outputs.image }}:latest
+          docker push ${{ steps.docker-image.outputs.image }}:${{ github.sha }}
+
+      - name: Download task definition
+        run: |
+          aws ecs describe-task-definition --task-definition ${{ secrets.ECS_TASK }} --query taskDefinition > ${{ env.ECS_TASK_DEFINITION }}
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ env.ECS_TASK_DEFINITION }}
+          container-name: ${{ github.event.repository.name }}
+          image: ${{ steps.docker-image.outputs.image }}:${{ github.sha }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ secrets.ECS_SERVICE }}
+          cluster: ${{ secrets.ECS_CLUSTER }}
+          wait-for-service-stability: true
+          force-new-deployment: true
+
