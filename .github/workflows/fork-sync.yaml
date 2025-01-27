@@ -20,5 +20,5 @@ jobs:
           head: master
           base: master
           auto_merge: false
-          pr_title: Sync with upstream repo
-          pr_message: Merge latest changes from upstream repo
+          pr_title: Sync with upstream repo [$(date +'%Y-%m-%d')]
+          pr_message: Merge latest changes from upstream repo [$(date +'%Y-%m-%d')]
