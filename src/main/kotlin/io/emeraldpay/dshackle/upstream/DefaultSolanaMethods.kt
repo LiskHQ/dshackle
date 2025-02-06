@@ -71,10 +71,10 @@ class DefaultSolanaMethods : CallMethods {
         "minimumLedgerSlot",
         "requestAirdrop",
         "simulateTransaction",
-        "getRecentBlockHash",
         "getFees",
         "getIdentity",
         "getConfirmedSignaturesForAddress2",
+        "getRecentBlockhash",
     )
 
     private val add = setOf(
