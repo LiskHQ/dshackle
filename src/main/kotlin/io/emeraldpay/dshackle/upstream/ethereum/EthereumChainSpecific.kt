@@ -65,7 +65,7 @@ object EthereumChainSpecific : AbstractPollChainSpecific() {
         methods: CallMethods,
         head: Head,
     ): Mono<ChainReader> {
-        return Mono.just(EthereumLocalReader(cachingReader as EthereumCachingReader, methods, head))
+        return Mono.just(EthereumLocalReader(cachingReader as EthereumCachingReader, methods))
     }
 
     override fun subscriptionBuilder(headScheduler: Scheduler): (Multistream) -> EgressSubscription {
@@ -157,6 +157,9 @@ object EthereumChainSpecific : AbstractPollChainSpecific() {
         val validators = mutableListOf<SingleValidator<ValidateUpstreamSettingsResult>>(
             ChainIdValidator(upstream, chain),
         )
+        if (options.valdateErigonBug) {
+            validators.add(ErigonBuggedValidator(upstream))
+        }
         val limitValidator = EthCallLimitValidator(upstream, options, config)
         if (limitValidator.isEnabled()) {
             validators.add(limitValidator)
